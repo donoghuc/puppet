@@ -379,7 +379,7 @@ class Loaders
     # env_conf is setup from the environment_dir value passed into Puppet::Environments::Directories.new
     env_conf = Puppet.lookup(:environments).get_conf(environment.name)
     env_path = env_conf.nil? || !env_conf.is_a?(Puppet::Settings::EnvironmentConf) ? nil : env_conf.path_to_env
-
+    require 'pry'; binding.pry
     if Puppet[:tasks]
       loader = Loader::ModuleLoaders.environment_loader_from(parent_loader, self, env_path)
     else
