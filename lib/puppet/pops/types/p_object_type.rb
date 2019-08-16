@@ -628,6 +628,7 @@ class PObjectType < PMetaType
 
     if init_param_names != param_names
       if init_param_names.size < param_count || init_non_opt_count > param_count
+        require 'pry'; binding.pry
         raise Serialization::SerializationError, "Initializer for class #{impl_class.name} does not match the attributes of #{name}"
       end
       init_param_names = init_param_names[0, param_count] if init_param_names.size > param_count
