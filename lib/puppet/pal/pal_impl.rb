@@ -157,6 +157,7 @@ module Pal
       code_string:       nil,
       facts:             nil,
       variables:         nil,
+      deserialize_pcore: false,
       &block
   )
     # TRANSLATORS: do not translate variable name strings in these assertions
@@ -191,7 +192,8 @@ module Pal
 
     # If manifest_file is nil, the #main method will use the env configured manifest
     # to do things in the block while a Script Compiler is in effect
-    main(manifest_file, facts, variables, :catalog, &block)
+    opts = { deserialize_pcore: deserialize_pcore }
+    main(manifest_file, facts, variables, :catalog, opts, &block)
   ensure
     # Clean up after ourselves
     Puppet[:tasks] = previous_tasks_value
@@ -379,7 +381,7 @@ module Pal
   # Picks up information from the puppet context and configures a script compiler which is given to
   # the provided block
   #
-  def self.main(manifest, facts, variables, internal_compiler_class)
+  def self.main(manifest, facts, variables, internal_compiler_class, deserialize_pcore: false)
     # Configure the load path
     env = Puppet.lookup(:pal_env)
     env.each_plugin_directory do |dir|
@@ -398,10 +400,6 @@ module Pal
     unless facts.nil? || facts.empty?
       pal_facts = pal_facts.merge(facts)
       overrides[:pal_facts] = pal_facts
-    end
-    unless variables.nil? || variables.empty?
-      pal_variables = pal_variables.merge(variables)
-      overrides[:pal_variables] = pal_variables
     end
 
     prepare_node_facts(node, pal_facts)
@@ -424,6 +422,11 @@ module Pal
       begin
         node.sanitize()
         compiler = create_internal_compiler(internal_compiler_class, node)
+        unless variables.nil? || variables.empty?
+          pal_variables = pal_variables.merge(variables)
+          pal_variables = Puppet::Pops::Serialization::FromDataConverter.convert(pal_variables) if deserialize_pcore
+          overrides[:pal_variables] = pal_variables
+        end
         add_variables(compiler.topscope, pal_variables)
 
         case internal_compiler_class
